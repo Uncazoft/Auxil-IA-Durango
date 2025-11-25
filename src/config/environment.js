@@ -63,9 +63,11 @@ class EnvironmentConfig {
       throw new Error(
         'GEMINI_API_KEY no configurada.\n\n' +
         'SOLUCIÓN:\n' +
-        '1. Crea un archivo .env en la raíz del proyecto\n' +
-        '2. Agrega: GEMINI_API_KEY=AIzaSyAgptyGayrgfYrhiHyENcrIfk5Mf6FKqPg\n' +
-        '3. Reinicia el servidor'
+        '1. Crea un archivo .env en la raíz del proyecto.\n' +
+        '2. Obtén tu clave de API desde Google AI Studio (https://aistudio.google.com/app/apikey).\n' +
+        '3. Agrega la siguiente línea a tu archivo .env, reemplazando <TU_API_KEY> con tu clave real:\n' +
+        '   GEMINI_API_KEY=<TU_API_KEY>\n' +
+        '4. Reinicia el servidor.'
       );
     }
 

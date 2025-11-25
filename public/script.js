@@ -1,4 +1,10 @@
-// Medical Chat Application - Professional Version
+
+import { auth, db, storage, messaging } from './src/config/firebase.js';
+import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "firebase/auth";
+import { doc, setDoc, serverTimestamp, collection, addDoc } from "firebase/firestore";
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { getToken, onMessage } from "firebase/messaging";
+
 class MedicalChatApp {
     constructor() {
         this.sessionId = null;
@@ -6,7 +12,8 @@ class MedicalChatApp {
         this.sessionStartTime = null;
         this.timerInterval = null;
         this.lastResponseTime = null;
-        
+        this.user = null;
+
         this.initializeApp();
     }
 
@@ -16,6 +23,8 @@ class MedicalChatApp {
         this.initializeTheme();
         this.checkServerHealth();
         this.setWelcomeTime();
+        this.initializeAuth();
+        this.initializeFCM();
     }
 
     initializeElements() {
@@ -24,14 +33,22 @@ class MedicalChatApp {
         this.messageInput = document.getElementById('message-input');
         this.sendButton = document.getElementById('send-button');
         this.messageForm = document.getElementById('message-form');
-        
+
         // Buttons
         this.startSessionBtn = document.getElementById('start-session-btn');
         this.startBtn = document.getElementById('start-btn');
         this.endBtn = document.getElementById('end-btn');
         this.clearInputBtn = document.getElementById('clear-input');
         this.emergencyCallBtn = document.getElementById('emergency-call-btn');
-        
+        this.loginBtn = document.getElementById('login-btn');
+        this.logoutBtn = document.getElementById('logout-btn');
+        this.attachFileBtn = document.getElementById('attach-file-btn');
+        this.imageInput = document.getElementById('image-input');
+
+        // User Info
+        this.userInfo = document.getElementById('user-info');
+        this.userEmail = document.getElementById('user-email');
+
         // Status elements
         this.connectionStatus = document.getElementById('connection-status');
         this.sessionStatus = document.getElementById('session-status');
@@ -39,22 +56,22 @@ class MedicalChatApp {
         this.sessionIdDisplay = document.getElementById('session-id-display');
         this.responseTimeValue = document.getElementById('response-time-value');
         this.charCount = document.getElementById('char-count');
-        
+
         // Modals
         this.emergencyModal = document.getElementById('emergency-modal');
         this.endSessionModal = document.getElementById('end-session-modal');
         this.loadingOverlay = document.getElementById('loading-overlay');
-        
+
         // Modal buttons
         this.confirmEndBtn = document.getElementById('confirm-end-btn');
         this.cancelEndBtn = document.getElementById('cancel-end-btn');
         this.closeEmergencyModal = document.getElementById('close-emergency-modal');
         this.closeEndModal = document.getElementById('close-end-modal');
         this.cancelEmergency = document.getElementById('cancel-emergency');
-        
+
         // Theme
         this.themeToggle = document.getElementById('theme-toggle');
-        
+
         // Quick action buttons
         this.quickActionButtons = document.querySelectorAll('.action-btn');
     }
@@ -62,33 +79,36 @@ class MedicalChatApp {
     initializeEventListeners() {
         // Form submission
         this.messageForm.addEventListener('submit', (e) => this.handleMessageSubmit(e));
-        
+
         // Session controls
         this.startSessionBtn.addEventListener('click', () => this.startMedicalSession());
         this.startBtn.addEventListener('click', () => this.startMedicalSession());
         this.endBtn.addEventListener('click', () => this.showEndSessionModal());
         this.emergencyCallBtn.addEventListener('click', () => this.showEmergencyModal());
-        
+
         // Input handling
         this.messageInput.addEventListener('input', () => this.handleInputChange());
         this.messageInput.addEventListener('keydown', (e) => this.handleKeydown(e));
         this.clearInputBtn.addEventListener('click', () => this.clearInput());
-        
+        this.attachFileBtn.addEventListener('click', () => this.imageInput.click());
+        this.imageInput.addEventListener('change', (e) => this.handleFileUpload(e));
+
+
         // Modal controls
         this.confirmEndBtn.addEventListener('click', () => this.endMedicalSession());
         this.cancelEndBtn.addEventListener('click', () => this.hideEndSessionModal());
         this.closeEmergencyModal.addEventListener('click', () => this.hideEmergencyModal());
         this.closeEndModal.addEventListener('click', () => this.hideEndSessionModal());
         this.cancelEmergency.addEventListener('click', () => this.hideEmergencyModal());
-        
+
         // Theme toggle
         this.themeToggle.addEventListener('click', () => this.toggleTheme());
-        
+
         // Quick actions
         this.quickActionButtons.forEach(btn => {
             btn.addEventListener('click', (e) => this.handleQuickAction(e));
         });
-        
+
         // Close modals on backdrop click
         [this.emergencyModal, this.endSessionModal].forEach(modal => {
             modal.addEventListener('click', (e) => {
@@ -97,7 +117,85 @@ class MedicalChatApp {
                 }
             });
         });
+
+        // Auth
+        this.loginBtn.addEventListener('click', () => this.handleLogin());
+        this.logoutBtn.addEventListener('click', () => this.handleLogout());
     }
+
+    initializeAuth() {
+        onAuthStateChanged(auth, (user) => {
+            this.user = user;
+            this.updateUserUI(user);
+        });
+    }
+
+    async handleLogin() {
+        const provider = new GoogleAuthProvider();
+        try {
+            await signInWithPopup(auth, provider);
+        } catch (error) {
+            console.error("Login failed:", error);
+            this.addSystemMessage(`Error de inicio de sesión: ${error.message}`, 'error');
+        }
+    }
+
+    async handleLogout() {
+        try {
+            await signOut(auth);
+        } catch (error) {
+            console.error("Logout failed:", error);
+        }
+    }
+
+    updateUserUI(user) {
+        if (user) {
+            this.userInfo.style.display = 'block';
+            this.loginBtn.style.display = 'none';
+            this.userEmail.textContent = user.email;
+        } else {
+            this.userInfo.style.display = 'none';
+            this.loginBtn.style.display = 'block';
+        }
+    }
+
+    async handleFileUpload(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        if (!this.isSessionActive) {
+            this.addSystemMessage('Por favor, inicie una sesión antes de subir una imagen.', 'warning');
+            return;
+        }
+
+        this.showLoading('Subiendo imagen...');
+
+        try {
+            // TODO: Implement Firebase Storage upload
+            const storageRef = ref(storage, `images/${this.sessionId}/${file.name}`);
+            await uploadBytes(storageRef, file);
+            const downloadURL = await getDownloadURL(storageRef);
+
+            this.addSystemMessage(`Imagen subida: <a href="${downloadURL}" target="_blank">${file.name}</a>`, 'info');
+            this.sendMessage(`El usuario ha subido una imagen: ${downloadURL}`);
+
+        } catch (error) {
+            console.error("Image upload failed:", error);
+            this.addSystemMessage('Error al subir la imagen.', 'error');
+        } finally {
+            this.hideLoading();
+        }
+    }
+
+    initializeFCM() {
+        // TODO: Implement Firebase Cloud Messaging
+        console.log("Initializing FCM (placeholder)");
+        // onMessage(messaging, (payload) => {
+        //     console.log('Message received. ', payload);
+        //     // ...
+        // });
+    }
+
 
     initializeTheme() {
         const savedTheme = localStorage.getItem('medassist-theme') || 'light';
@@ -108,7 +206,7 @@ class MedicalChatApp {
     toggleTheme() {
         const currentTheme = document.documentElement.getAttribute('data-theme');
         const newTheme = currentTheme === 'light' ? 'dark' : 'light';
-        
+
         document.documentElement.setAttribute('data-theme', newTheme);
         localStorage.setItem('medassist-theme', newTheme);
         this.updateThemeIcon(newTheme);
@@ -130,11 +228,11 @@ class MedicalChatApp {
     handleInputChange() {
         const text = this.messageInput.value;
         this.charCount.textContent = text.length;
-        
+
         // Auto-resize
         this.messageInput.style.height = 'auto';
         this.messageInput.style.height = Math.min(this.messageInput.scrollHeight, 120) + 'px';
-        
+
         // Toggle send button
         this.sendButton.disabled = !text.trim() || !this.isSessionActive;
     }
@@ -148,10 +246,10 @@ class MedicalChatApp {
 
     handleMessageSubmit(e) {
         e.preventDefault();
-        
+
         const message = this.messageInput.value.trim();
         if (!message || !this.isSessionActive) return;
-        
+
         this.sendMessage(message);
     }
 
@@ -164,12 +262,12 @@ class MedicalChatApp {
     async checkServerHealth() {
         try {
             this.showLoading('Verificando conexión con el servidor...');
-            
+
             const response = await fetch('/api/health');
             const data = await response.json();
-            
+
             this.updateConnectionStatus(data.success);
-            
+
             if (data.success) {
                 this.addSystemMessage('Sistema conectado correctamente. Puede iniciar una sesión médica.', 'success');
             } else {
@@ -187,7 +285,7 @@ class MedicalChatApp {
     updateConnectionStatus(isConnected) {
         const dot = this.connectionStatus.querySelector('.status-dot');
         const text = this.connectionStatus.querySelector('.status-text');
-        
+
         if (isConnected) {
             dot.classList.add('connected');
             text.textContent = 'Conectado';
@@ -200,7 +298,7 @@ class MedicalChatApp {
     updateSessionStatus(isActive) {
         const dot = this.sessionStatus.querySelector('.status-dot');
         const text = this.sessionStatus.querySelector('.status-text');
-        
+
         if (isActive) {
             dot.classList.add('connected');
             text.textContent = 'Activa';
@@ -211,15 +309,20 @@ class MedicalChatApp {
     }
 
     async startMedicalSession() {
+        if (!this.user) {
+            this.addSystemMessage('Por favor, inicie sesión para comenzar una sesión médica.', 'warning');
+            return;
+        }
+
         try {
             this.showLoading('Iniciando sesión médica...');
-            
+
             const response = await fetch('/api/medical/start', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({})
+                body: JSON.stringify({ userId: this.user.uid })
             });
 
             const data = await response.json();
@@ -231,21 +334,30 @@ class MedicalChatApp {
             this.sessionId = data.sessionId;
             this.isSessionActive = true;
             this.sessionStartTime = new Date();
-            
+
+            // TODO: Create a new chat document in Firestore
+            const chatRef = doc(db, "chats", this.sessionId);
+            await setDoc(chatRef, {
+                userId: this.user.uid,
+                startTime: serverTimestamp(),
+                status: "active"
+            });
+
+
             this.updateSessionStatus(true);
             this.sessionIdDisplay.textContent = `ID: ${this.sessionId.substring(0, 8)}...`;
-            
+
             // Enable interface
             this.messageInput.disabled = false;
             this.sendButton.disabled = true;
             this.endBtn.disabled = false;
             this.startSessionBtn.style.display = 'none';
             this.startBtn.style.display = 'none';
-            
+
             this.startSessionTimer();
-            
+
             this.addSystemMessage('Sesión médica iniciada. Por favor, describa la situación de emergencia.', 'success');
-            
+
             // Focus input
             setTimeout(() => this.messageInput.focus(), 100);
 
@@ -259,16 +371,25 @@ class MedicalChatApp {
 
     async sendMessage(message) {
         const startTime = performance.now();
-        
+
         try {
             // Clear input and disable temporarily
             this.messageInput.value = '';
             this.handleInputChange();
             this.sendButton.disabled = true;
-            
+
             // Add user message to chat
             this.addUserMessage(message);
-            
+
+            // TODO: Save user message to Firestore
+            const messagesRef = collection(db, "chats", this.sessionId, "messages");
+            await addDoc(messagesRef, {
+                text: message,
+                sender: "user",
+                timestamp: serverTimestamp()
+            });
+
+
             const response = await fetch('/api/medical/message', {
                 method: 'POST',
                 headers: {
@@ -293,6 +414,13 @@ class MedicalChatApp {
 
             // Add assistant response
             this.addAssistantMessage(data.response, data.shouldEndSession ? 'emergency' : '');
+
+            // TODO: Save assistant message to Firestore
+            await addDoc(messagesRef, {
+                text: data.response,
+                sender: "assistant",
+                timestamp: serverTimestamp()
+            });
 
             if (data.shouldEndSession) {
                 setTimeout(() => this.endMedicalSession(), 2000);
@@ -362,6 +490,11 @@ class MedicalChatApp {
                 })
             });
 
+            // TODO: Update chat document in Firestore
+            const chatRef = doc(db, "chats", this.sessionId);
+            await setDoc(chatRef, { status: "ended" }, { merge: true });
+
+
             // Reset session state
             this.resetSession();
             this.addSystemMessage('Sesión médica finalizada. Si necesita más ayuda, inicie una nueva sesión.', 'info');
@@ -378,10 +511,10 @@ class MedicalChatApp {
         this.isSessionActive = false;
         this.sessionId = null;
         this.sessionStartTime = null;
-        
+
         this.updateSessionStatus(false);
         this.sessionIdDisplay.textContent = 'ID: No activa';
-        
+
         // Restore interface
         this.messageInput.disabled = true;
         this.messageInput.value = '';
@@ -389,7 +522,7 @@ class MedicalChatApp {
         this.endBtn.disabled = true;
         this.startSessionBtn.style.display = 'block';
         this.startBtn.style.display = 'block';
-        
+
         this.stopSessionTimer();
         this.sessionTimer.querySelector('span').textContent = '00:00';
         this.handleInputChange();
@@ -397,13 +530,13 @@ class MedicalChatApp {
 
     startSessionTimer() {
         this.stopSessionTimer();
-        
+
         this.timerInterval = setInterval(() => {
             const now = new Date();
             const diff = Math.floor((now - this.sessionStartTime) / 1000);
             const minutes = Math.floor(diff / 60).toString().padStart(2, '0');
             const seconds = (diff % 60).toString().padStart(2, '0');
-            
+
             this.sessionTimer.querySelector('span').textContent = `${minutes}:${seconds}`;
         }, 1000);
     }
@@ -429,10 +562,10 @@ class MedicalChatApp {
 
     addMessage(content, type, additionalType = '') {
         const messageDiv = document.createElement('div');
-        
-        const timestamp = new Date().toLocaleTimeString('es-ES', { 
-            hour: '2-digit', 
-            minute: '2-digit' 
+
+        const timestamp = new Date().toLocaleTimeString('es-ES', {
+            hour: '2-digit',
+            minute: '2-digit'
         });
 
         // CORRECCIÓN DEL ERROR: Eliminar espacios en las clases CSS
@@ -481,7 +614,7 @@ class MedicalChatApp {
 
         this.chatMessages.appendChild(messageDiv);
         this.scrollToBottom();
-        
+
         // Add subtle animation
         messageDiv.style.animation = 'messageSlideIn 0.3s ease-out';
     }

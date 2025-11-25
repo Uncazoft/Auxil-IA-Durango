@@ -24,8 +24,13 @@
                         <span class="brand-subtitle">Asistente Médico Virtual</span>
                     </div>
                 </div>
-                
+
                 <div class="nav-controls">
+                    <div id="user-info" style="display: none;">
+                        <span id="user-email"></span>
+                        <button id="logout-btn">Logout</button>
+                    </div>
+                    <button id="login-btn">Login</button>
                     <div class="status-group">
                         <div class="status-item" id="connection-status">
                             <div class="status-indicator">
@@ -42,7 +47,7 @@
                             <span class="status-text">Inactiva</span>
                         </div>
                     </div>
-                    
+
                     <button class="theme-toggle" id="theme-toggle" aria-label="Cambiar tema">
                         <i class="fas fa-moon"></i>
                     </button>
@@ -123,8 +128,8 @@
                         <form class="message-form" id="message-form">
                             <div class="input-group">
                                 <div class="input-wrapper">
-                                    <textarea 
-                                        id="message-input" 
+                                    <textarea
+                                        id="message-input"
                                         class="message-input"
                                         placeholder="Describa la emergencia médica... (Ej: 'Dolor intenso en el pecho', 'Caída con lesión visible')"
                                         rows="1"
@@ -133,6 +138,10 @@
                                         aria-label="Escriba su mensaje de emergencia"
                                     ></textarea>
                                     <div class="input-actions">
+                                        <input type="file" id="image-input" accept="image/*" style="display: none;" />
+                                        <button type="button" class="input-action-btn" id="attach-file-btn" title="Adjuntar imagen">
+                                            <i class="fas fa-paperclip"></i>
+                                        </button>
                                         <button type="button" class="input-action-btn" id="clear-input" title="Limpiar mensaje">
                                             <i class="fas fa-times"></i>
                                         </button>
@@ -142,7 +151,7 @@
                                         </button>
                                     </div>
                                 </div>
-                                
+
                                 <div class="input-footer">
                                     <div class="character-count">
                                         <span id="char-count">0</span>/2000
@@ -309,7 +318,7 @@
                 <div class="footer-disclaimer">
                     <p>
                         <i class="fas fa-exclamation-triangle"></i>
-                        Este sistema de inteligencia artificial no sustituye la atención médica profesional. 
+                        Este sistema de inteligencia artificial no sustituye la atención médica profesional.
                         En emergencias reales, contacte inmediatamente a los servicios de emergencia.
                     </p>
                 </div>
@@ -399,7 +408,7 @@
             </div>
         </div>
     </div>
-
+    <script type="module" src="src/config/firebase.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

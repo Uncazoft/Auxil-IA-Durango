@@ -8,7 +8,7 @@ function checkConfiguration() {
     const geminiKey = envConfig.getGeminiApiKey();
     
     console.log('✅ Configuración correcta:');
-    console.log(`   - GEMINI_API_KEY: ${geminiKey.substring(0, 10)}...${geminiKey.substring(geminiKey.length - 4)}`);
+    console.log(`   - GEMINI_API_KEY: ${geminiKey.substring(0, 4)}...${geminiKey.substring(geminiKey.length - 4)} (Oculta por seguridad)`);
     console.log(`   - Longitud: ${geminiKey.length} caracteres`);
     console.log(`   - Modelo: gemini-2.0-flash`);
     console.log(`   - NODE_ENV: ${envConfig.get('NODE_ENV', 'development')}`);
@@ -21,10 +21,11 @@ function checkConfiguration() {
     console.error(`   ${error.message}`);
     
     console.log('\n💡 Solución:');
-    console.log('   1. Crea un archivo .env en la raíz del proyecto');
-    console.log('   2. Agrega esta línea:');
-    console.log('      GEMINI_API_KEY=AIzaSyAgptyGayrgfYrhiHyENcrIfk5Mf6FKqPg');
-    console.log('   3. Ejecuta: npm run check-config\n');
+    console.log('   1. Crea un archivo .env en la raíz del proyecto.');
+    console.log('   2. Obtén tu clave de API desde Google AI Studio (https://aistudio.google.com/app/apikey). ');
+    console.log('   3. Agrega la siguiente línea a tu archivo .env, reemplazando <TU_API_KEY> con tu clave real:');
+    console.log('      GEMINI_API_KEY=<TU_API_KEY>');
+    console.log('   4. Vuelve a ejecutar: npm run check-config\n');
     
     process.exit(1);
   }

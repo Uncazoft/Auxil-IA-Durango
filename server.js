@@ -27,13 +27,32 @@ app.use(helmet({
   contentSecurityPolicy: {
     directives: {
       defaultSrc: ["'self'"],
-      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com"],
-      fontSrc: ["'self'", "https://fonts.gstatic.com"],
-      scriptSrc: ["'self'", "'unsafe-inline'"],
-      connectSrc: ["'self'", "https://generativelanguage.googleapis.com"]
+      styleSrc: ["'self'", "'unsafe-inline'", "https://fonts.googleapis.com", "https://cdnjs.cloudflare.com"],
+      fontSrc: ["'self'", "https://fonts.gstatic.com", "https://cdnjs.cloudflare.com"],
+      scriptSrc: [
+        "'self'",
+        "'unsafe-inline'",
+        "https://www.gstatic.com",
+        "https://*.firebaseio.com",
+        "https://apis.google.com" // Needed for Google Sign In
+      ],
+      connectSrc: [
+        "'self'",
+        "https://generativelanguage.googleapis.com",
+        "https://*.firebaseio.com", // Firestore
+        "https://www.googleapis.com", // Google Auth
+        "https://securetoken.googleapis.com", // Google Auth
+        "https://firebasestorage.googleapis.com" // Firebase Storage
+      ],
+      frameSrc: [
+        "'self'",
+        "https://*.firebaseapp.com" // Google Auth
+      ],
+      imgSrc: ["'self'", "data:", "https:", "https://lh3.googleusercontent.com"] // Allow user profile images
     }
   }
 }));
+
 
 // Rate limiting para prevenir abuso
 const limiter = rateLimit({
@@ -51,7 +70,11 @@ app.use(cors());
 app.use(limiter);
 app.use(morgan('combined'));
 app.use(express.json({ limit: '10mb' }));
+
+// Servir archivos estáticos
 app.use(express.static('public'));
+app.use('/src', express.static(path.join(__dirname, 'src')));
+
 
 // Routes
 app.get('/', (req, res) => {
