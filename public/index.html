@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html lang="es" data-theme="light">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedAssist AI - Asistente Médico Virtual</title>
+    <meta name="description" content="Asistente médico virtual de emergencias con inteligencia artificial Gemini">
+    <link rel="stylesheet" href="styles.css">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🩺</text></svg>">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Navigation Header -->
+        <header class="app-header">
+            <nav class="navbar">
+                <div class="nav-brand">
+                    <div class="brand-logo">
+                        <i class="fas fa-heart-pulse"></i>
+                    </div>
+                    <div class="brand-text">
+                        <h1>MedAssist AI</h1>
+                        <span class="brand-subtitle">Asistente Médico Virtual</span>
+                    </div>
+                </div>
+                
+                <div class="nav-controls">
+                    <div class="status-group">
+                        <div class="status-item" id="connection-status">
+                            <div class="status-indicator">
+                                <div class="status-dot"></div>
+                                <span class="status-label">Conexión</span>
+                            </div>
+                            <span class="status-text">Conectando...</span>
+                        </div>
+                        <div class="status-item" id="session-status">
+                            <div class="status-indicator">
+                                <div class="status-dot"></div>
+                                <span class="status-label">Sesión</span>
+                            </div>
+                            <span class="status-text">Inactiva</span>
+                        </div>
+                    </div>
+                    
+                    <button class="theme-toggle" id="theme-toggle" aria-label="Cambiar tema">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </div>
+            </nav>
+
+            <!-- Emergency Alert Banner -->
+            <div class="emergency-alert" role="alert" aria-live="assertive">
+                <div class="alert-icon">
+                    <i class="fas fa-triangle-exclamation"></i>
+                </div>
+                <div class="alert-content">
+                    <strong>EMERGENCIA MÉDICA</strong>
+                    <span>Si es una situación crítica, llame inmediatamente al 911. Este sistema es de apoyo inicial.</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Application -->
+        <main class="app-main">
+            <!-- Chat Interface -->
+            <section class="chat-section" aria-label="Chat de emergencia médica">
+                <div class="chat-container">
+                    <!-- Chat Header -->
+                    <div class="chat-header">
+                        <div class="chat-info">
+                            <h2>Asistencia de Emergencia</h2>
+                            <div class="model-badge">
+                                <i class="fas fa-robot"></i>
+                                Gemini 2.0 Flash
+                            </div>
+                        </div>
+                        <div class="session-info">
+                            <div class="session-timer" id="session-timer">
+                                <i class="fas fa-clock"></i>
+                                <span>00:00</span>
+                            </div>
+                            <div class="session-id" id="session-id-display">
+                                ID: No activa
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Messages -->
+                    <div class="chat-messages" id="chat-messages" role="log" aria-live="polite">
+                        <!-- Welcome Message -->
+                        <div class="message system-message">
+                            <div class="message-avatar">
+                                <i class="fas fa-shield-heart"></i>
+                            </div>
+                            <div class="message-content">
+                                <div class="message-header">
+                                    <span class="message-sender">Sistema MedAssist</span>
+                                    <span class="message-time" id="welcome-time"></span>
+                                </div>
+                                <div class="message-body">
+                                    <h3>Protocolo de Emergencia Activado</h3>
+                                    <p>Estoy aquí para asistirle en situaciones médicas críticas. Por su seguridad:</p>
+                                    <ul class="safety-list">
+                                        <li><i class="fas fa-check-circle"></i> Proporcione información clara y precisa</li>
+                                        <li><i class="fas fa-check-circle"></i> Siga las instrucciones paso a paso</li>
+                                        <li><i class="fas fa-check-circle"></i> Mantenga la calma en todo momento</li>
+                                        <li><i class="fas fa-check-circle"></i> Contacte servicios de emergencia si es crítico</li>
+                                    </ul>
+                                    <div class="action-required">
+                                        <button class="start-session-btn" id="start-session-btn">
+                                            <i class="fas fa-play-circle"></i>
+                                            Iniciar Sesión de Emergencia
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="chat-input-container">
+                        <form class="message-form" id="message-form">
+                            <div class="input-group">
+                                <div class="input-wrapper">
+                                    <textarea 
+                                        id="message-input" 
+                                        class="message-input"
+                                        placeholder="Describa la emergencia médica... (Ej: 'Dolor intenso en el pecho', 'Caída con lesión visible')"
+                                        rows="1"
+                                        maxlength="2000"
+                                        disabled
+                                        aria-label="Escriba su mensaje de emergencia"
+                                    ></textarea>
+                                    <div class="input-actions">
+                                        <button type="button" class="input-action-btn" id="clear-input" title="Limpiar mensaje">
+                                            <i class="fas fa-times"></i>
+                                        </button>
+                                        <button type="submit" class="send-button" id="send-button" disabled>
+                                            <i class="fas fa-paper-plane"></i>
+                                            <span class="button-text">Enviar</span>
+                                        </button>
+                                    </div>
+                                </div>
+                                
+                                <div class="input-footer">
+                                    <div class="character-count">
+                                        <span id="char-count">0</span>/2000
+                                    </div>
+                                    <div class="input-hints">
+                                        <i class="fas fa-info-circle"></i>
+                                        Presione Enter para enviar, Shift+Enter para nueva línea
+                                    </div>
+                                </div>
+                            </div>
+                        </form>
+
+                        <!-- Session Controls -->
+                        <div class="session-controls">
+                            <button class="control-btn primary" id="start-btn">
+                                <i class="fas fa-plus-circle"></i>
+                                Nueva Sesión
+                            </button>
+                            <button class="control-btn secondary" id="end-btn" disabled>
+                                <i class="fas fa-stop-circle"></i>
+                                Finalizar
+                            </button>
+                            <button class="control-btn danger" id="emergency-call-btn">
+                                <i class="fas fa-phone-alt"></i>
+                                Llamar 911
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Information Sidebar -->
+            <aside class="info-sidebar" aria-label="Información de emergencia">
+                <!-- Emergency Contacts -->
+                <div class="sidebar-card emergency-contacts">
+                    <div class="card-header">
+                        <i class="fas fa-phone-emergency"></i>
+                        <h3>Contactos de Emergencia</h3>
+                    </div>
+                    <div class="contact-list">
+                        <div class="contact-item critical">
+                            <div class="contact-icon">
+                                <i class="fas fa-ambulance"></i>
+                            </div>
+                            <div class="contact-info">
+                                <span class="contact-name">Emergencias Médicas</span>
+                                <span class="contact-number">911</span>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="fas fa-fire-extinguisher"></i>
+                            </div>
+                            <div class="contact-info">
+                                <span class="contact-name">Bomberos</span>
+                                <span class="contact-number">911</span>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <div class="contact-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div class="contact-info">
+                                <span class="contact-name">Policía</span>
+                                <span class="contact-number">911</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Critical Information -->
+                <div class="sidebar-card critical-info">
+                    <div class="card-header">
+                        <i class="fas fa-info-circle"></i>
+                        <h3>Información Esencial</h3>
+                    </div>
+                    <div class="info-list">
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-location-dot"></i>
+                            </div>
+                            <div class="info-content">
+                                <strong>Ubicación exacta</strong>
+                                <span>Dirección completa y punto de referencia</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-user"></i>
+                            </div>
+                            <div class="info-content">
+                                <strong>Edad y género</strong>
+                                <span>Edad aproximada y sexo del paciente</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-heart-pulse"></i>
+                            </div>
+                            <div class="info-content">
+                                <strong>Síntomas principales</strong>
+                                <span>Descripción detallada de los síntomas</span>
+                            </div>
+                        </div>
+                        <div class="info-item">
+                            <div class="info-icon">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div class="info-content">
+                                <strong>Tiempo transcurrido</strong>
+                                <span>Cuándo comenzaron los síntomas</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Actions -->
+                <div class="sidebar-card quick-actions">
+                    <div class="card-header">
+                        <i class="fas fa-bolt"></i>
+                        <h3>Acciones Rápidas</h3>
+                    </div>
+                    <div class="action-grid">
+                        <button class="action-btn" data-action="breathing">
+                            <i class="fas fa-lungs"></i>
+                            Problemas respiratorios
+                        </button>
+                        <button class="action-btn" data-action="bleeding">
+                            <i class="fas fa-tint"></i>
+                            Sangrado severo
+                        </button>
+                        <button class="action-btn" data-action="unconscious">
+                            <i class="fas fa-bed"></i>
+                            Inconsciencia
+                        </button>
+                        <button class="action-btn" data-action="pain">
+                            <i class="fas fa-head-side-virus"></i>
+                            Dolor intenso
+                        </button>
+                    </div>
+                </div>
+            </aside>
+        </main>
+
+        <!-- App Footer -->
+        <footer class="app-footer">
+            <div class="footer-content">
+                <div class="footer-info">
+                    <div class="footer-brand">
+                        <i class="fas fa-heart-pulse"></i>
+                        <span>MedAssist AI v2.0</span>
+                    </div>
+                    <div class="footer-stats">
+                        <span class="stat-item">
+                            <i class="fas fa-robot"></i>
+                            Gemini 2.0 Flash
+                        </span>
+                        <span class="stat-item" id="response-time">
+                            <i class="fas fa-bolt"></i>
+                            <span id="response-time-value">-- ms</span>
+                        </span>
+                    </div>
+                </div>
+                <div class="footer-disclaimer">
+                    <p>
+                        <i class="fas fa-exclamation-triangle"></i>
+                        Este sistema de inteligencia artificial no sustituye la atención médica profesional. 
+                        En emergencias reales, contacte inmediatamente a los servicios de emergencia.
+                    </p>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Emergency Call Modal -->
+    <div class="modal-overlay" id="emergency-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-icon emergency">
+                    <i class="fas fa-phone-alt"></i>
+                </div>
+                <div class="modal-title">
+                    <h3>Llamada de Emergencia</h3>
+                    <p>¿Necesita contactar servicios de emergencia?</p>
+                </div>
+                <button class="modal-close" id="close-emergency-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content">
+                <div class="emergency-options">
+                    <button class="emergency-option critical" onclick="window.open('tel:911')">
+                        <i class="fas fa-ambulance"></i>
+                        <div class="option-content">
+                            <strong>Llamar al 911</strong>
+                            <span>Emergencias médicas inmediatas</span>
+                        </div>
+                    </button>
+                    <button class="emergency-option" id="cancel-emergency">
+                        <i class="fas fa-times-circle"></i>
+                        <div class="option-content">
+                            <strong>Continuar con asistente virtual</strong>
+                            <span>Para orientación inicial no crítica</span>
+                        </div>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Session End Modal -->
+    <div class="modal-overlay" id="end-session-modal">
+        <div class="modal-container">
+            <div class="modal-header">
+                <div class="modal-icon warning">
+                    <i class="fas fa-stop-circle"></i>
+                </div>
+                <div class="modal-title">
+                    <h3>Finalizar Sesión</h3>
+                    <p>¿Está seguro de que desea finalizar la sesión médica?</p>
+                </div>
+                <button class="modal-close" id="close-end-modal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div class="modal-content">
+                <div class="modal-actions">
+                    <button class="modal-btn primary" id="confirm-end-btn">
+                        <i class="fas fa-check"></i>
+                        Sí, Finalizar Sesión
+                    </button>
+                    <button class="modal-btn secondary" id="cancel-end-btn">
+                        <i class="fas fa-times"></i>
+                        Continuar Sesión
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loading-overlay">
+        <div class="loading-spinner">
+            <div class="spinner-icon">
+                <i class="fas fa-heartbeat"></i>
+            </div>
+            <div class="spinner-text">
+                <span>Conectando con MedAssist AI</span>
+                <div class="loading-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
