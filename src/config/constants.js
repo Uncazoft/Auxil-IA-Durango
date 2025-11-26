@@ -65,11 +65,11 @@ RESPONSE FORMAT:
 `;
 
 export const MODEL_CONFIG = {
-  model: "gemini-2.0-flash",  // ✅ VERSIÓN CORREGIDA QUE FUNCIONA
+  model: "gemini-1.5-flash-latest",
   temperature: 0.1,
   topK: 40,
   topP: 0.95,
-  maxOutputTokens: 2048,  // Aumentado para respuestas más completas
+  maxOutputTokens: 2048,
 };
 
 export const ERROR_MESSAGES = {

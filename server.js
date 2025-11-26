@@ -14,7 +14,8 @@ const __dirname = path.dirname(__filename);
 // Cargar configuración PRIMERO
 import './src/config/environment.js';
 
-// Importaciones del controlador
+// Importaciones de configuración y controlador
+import { MODEL_CONFIG } from './src/config/constants.js';
 import { geminiController } from './src/controllers/geminiController.js';
 import { Logger } from './src/utils/helpers.js';
 
@@ -53,7 +54,6 @@ app.use(helmet({
   }
 }));
 
-
 // Rate limiting para prevenir abuso
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutos
@@ -75,13 +75,12 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
 app.use('/src', express.static(path.join(__dirname, 'src')));
 
-
 // Routes
 app.get('/', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// API Routes - Gemini 2.0 Flash
+// API Routes
 app.post('/api/medical/start', geminiController.startSession.bind(geminiController));
 app.post('/api/medical/message', geminiController.processMessage.bind(geminiController));
 app.get('/api/medical/history/:sessionId', geminiController.getHistory.bind(geminiController));
@@ -97,7 +96,7 @@ app.use((error, req, res, next) => {
     success: false,
     error: process.env.NODE_ENV === 'development' ? error.message : 'Error interno del servidor',
     code: 'INTERNAL_SERVER_ERROR',
-    model: 'gemini-2.0-flash'
+    model: MODEL_CONFIG.model
   });
 });
 
@@ -112,9 +111,9 @@ app.use('*', (req, res) => {
 
 // Inicialización del servidor
 app.listen(PORT, () => {
-  console.log(`\n🎉 SERVICIO MÉDICO CON GEMINI 2.0 FLASH INICIADO`);
+  console.log(`\n🎉 SERVICIO MÉDICO CON GEMINI INICIADO`);
   console.log(`📍 Servidor: http://localhost:${PORT}`);
-  console.log(`🤖 Modelo: gemini-2.0-flash`);
+  console.log(`🤖 Modelo: ${MODEL_CONFIG.model}`);
   console.log(`🔑 API Key: ${process.env.GEMINI_API_KEY ? '✅ Configurada' : '❌ Faltante'}`);
   console.log(`🌍 Ambiente: ${process.env.NODE_ENV || 'development'}`);
   console.log(`🚀 ¡Sistema listo para emergencias médicas!\n`);
